@@ -42,48 +42,41 @@ def crop_card(image,card_model):
 
 '''correct the orientation of the cropped card'''
 def correct_orientation(image_cropped_bgr):
-    angles = [
-        (0, None),
-        (90, cv2.ROTATE_90_CLOCKWISE),
-        (270, cv2.ROTATE_90_COUNTERCLOCKWISE),
-        (180, cv2.ROTATE_180)
-    ]
-
+    angles = [0, 90, 180, 270]
     best_angle = 0
-    best_conf = 0
+    max_conf = 0
 
-    small_img = cv2.resize(image_cropped_bgr, (320, 320))
+    temp_bgr = image_cropped_bgr.copy()
 
-    for angle, flag in angles:
-        if flag is None:
-            img = small_img
+    for angle in angles:
+        if angle == 90:
+            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_90_CLOCKWISE)
+        elif angle == 180:
+            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_180)
+        elif angle == 270:
+            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
         else:
-            img = cv2.rotate(small_img, flag)
+            rotated = temp_bgr
 
-        results = id_model.predict(img, conf=0.4, verbose=False)[0]
+        results = id_model.predict(rotated, conf=0.4, verbose=False)[0]
 
         if len(results.boxes) > 0:
-            conf = results.boxes.conf.cpu().numpy().max()
-
-            if conf > best_conf:
-                best_conf = conf
+            current_conf = results.boxes.conf.cpu().numpy().max()
+            if current_conf > max_conf:
+                max_conf = current_conf
                 best_angle = angle
 
-            if conf > 0.85:
-                break
-
-    if best_angle == 0:
-        final_img = image_cropped_bgr
+    if best_angle == 90:
+        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_90_CLOCKWISE)
+    elif best_angle == 180:
+        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_180)
+    elif best_angle == 270:
+        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
     else:
-        flags = {
-            90: cv2.ROTATE_90_CLOCKWISE,
-            180: cv2.ROTATE_180,
-            270: cv2.ROTATE_90_COUNTERCLOCKWISE
-        }
-        final_img = cv2.rotate(image_cropped_bgr, flags[best_angle])
+        final_img = temp_bgr
 
-    return PImage.fromarray(cv2.cvtColor(final_img, cv2.COLOR_BGR2RGB))
-
+    img_rgb = cv2.cvtColor(final_img, cv2.COLOR_BGR2RGB)
+    return PImage.fromarray(img_rgb)
 
 '''correct the skew of the orientation corrected image'''
 def correct_skew(image):
