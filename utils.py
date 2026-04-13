@@ -1,4 +1,3 @@
-from PIL import Image as PImage
 from ultralytics import YOLO
 import easyocr
 import cv2
@@ -14,7 +13,7 @@ clahe       = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
 
 
 '''detect and crop the card from the input image'''
-def crop_card(image,card_model):
+def crop_card(image):
     prediction_results = card_model.predict(image, conf=0.5, iou=0.45)
     prediction_result  = prediction_results[0]
 
@@ -41,22 +40,22 @@ def crop_card(image,card_model):
 
 
 '''correct the orientation of the cropped card'''
-def correct_orientation(image_cropped_bgr):
+def correct_orientation(image_cropped):
     angles = [0, 90, 180, 270]
     best_angle = 0
     max_conf = 0
 
-    temp_bgr = image_cropped_bgr.copy()
+    small = cv2.resize(image_cropped, (320, 320))
 
     for angle in angles:
         if angle == 90:
-            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_90_CLOCKWISE)
+            rotated = cv2.rotate(small, cv2.ROTATE_90_CLOCKWISE)
         elif angle == 180:
-            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_180)
+            rotated = cv2.rotate(small, cv2.ROTATE_180)
         elif angle == 270:
-            rotated = cv2.rotate(temp_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            rotated = cv2.rotate(small, cv2.ROTATE_90_COUNTERCLOCKWISE)
         else:
-            rotated = temp_bgr
+            rotated = small
 
         results = id_model.predict(rotated, conf=0.4, verbose=False)[0]
 
@@ -67,22 +66,20 @@ def correct_orientation(image_cropped_bgr):
                 best_angle = angle
 
     if best_angle == 90:
-        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_90_CLOCKWISE)
+        final_img = cv2.rotate(small, cv2.ROTATE_90_CLOCKWISE)
     elif best_angle == 180:
-        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_180)
+        final_img = cv2.rotate(small, cv2.ROTATE_180)
     elif best_angle == 270:
-        final_img = cv2.rotate(temp_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        final_img = cv2.rotate(small, cv2.ROTATE_90_COUNTERCLOCKWISE)
     else:
-        final_img = temp_bgr
+        final_img = small
 
-    img_rgb = cv2.cvtColor(final_img, cv2.COLOR_BGR2RGB)
-    return PImage.fromarray(img_rgb)
+    return final_img
+
 
 '''correct the skew of the orientation corrected image'''
 def correct_skew(image):
-
-    img = np.array(image)
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
 
     lines = cv2.HoughLines(edges, 1, np.pi / 180, 150)
@@ -112,25 +109,14 @@ def correct_skew(image):
     M[1, 2] += (new_h - h) / 2
 
     rotated = cv2.warpAffine(
-        img,M,(new_w, new_h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_REPLICATE)
+        image,M,(new_w, new_h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_REPLICATE)
 
-    return PImage.fromarray(rotated)
-
-
-'''Expand Area'''
-def expand_bbox_height(bbox, scale=1.5, image_shape=None):
-    x1, y1, x2, y2 = bbox
-    height = y2 - y1
-    center_y = y1 + height // 2
-    new_height = int(height * scale)
-    new_y1 = max(center_y - new_height // 2, 0)
-    new_y2 = min(center_y + new_height // 2, image_shape[0])
-    return [x1, new_y1, x2, new_y2]
+    return rotated
 
 
 '''detect and crop the ID region from the corrected image'''
-def crop_id_box(img_bgr, id_model, pad=5):
-    result = id_model.predict(img_bgr, conf=0.5, verbose=False)[0]
+def crop_id_box(image, pad=5):
+    result = id_model.predict(image, conf=0.5, verbose=False)[0]
 
     if len(result.boxes) == 0:
         raise ValueError("ID region not detected")
@@ -139,21 +125,20 @@ def crop_id_box(img_bgr, id_model, pad=5):
     confs = boxes.conf.cpu().numpy()
     best_idx = np.argmax(confs)
     bbox = boxes.xyxy[best_idx].cpu().numpy().astype(int)
-    bbox = expand_bbox_height(bbox, scale=1.3, image_shape=img_bgr.shape)
 
     x1, y1, x2, y2 = bbox
     x1, y1 = max(0, x1-pad), max(0, y1-pad)
-    x2, y2 = min(img_bgr.shape[1], x2+pad), min(img_bgr.shape[0], y2+pad)
-    id_cropped = img_bgr[y1:y2, x1:x2].copy()
+    x2, y2 = min(image.shape[1], x2+pad), min(image.shape[0], y2+pad)
+    id_cropped = image[y1:y2, x1:x2].copy()
 
     return id_cropped
 
 
 def detect_national_id(id_cropped):
     gray = cv2.cvtColor(id_cropped, cv2.COLOR_BGR2GRAY)
-    gray_3ch = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    gray_3 = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
-    results = digit_model.predict(gray_3ch, conf=0.3, iou=0.5, verbose=False)[0]
+    results = digit_model.predict(gray_3, conf=0.3, iou=0.5, verbose=False)[0]
 
     if len(results.boxes) == 0:
         return ""
@@ -170,6 +155,7 @@ def detect_national_id(id_cropped):
     sorted_idx = np.argsort(boxes[:, 0])
     return ''.join([str(int(class_ids[i])) for i in sorted_idx])
 
+
 def preprocess_image(image):
     gray     = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray_up  = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
@@ -182,6 +168,7 @@ def preprocess_image(image):
         cv2.THRESH_BINARY, 31, 11
     )
     return binary
+
 
 def convert_arabic(text):
      return text.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
@@ -206,7 +193,7 @@ def extract_national_id(id_cropped):
 
     
     all_digits = ""
-    for box, text, conf in sorted(result, key=lambda x: x[0][0][0]):
+    for box, text, _ in sorted(result, key=lambda x: x[0][0][0]):
         all_digits += re.sub(r'\D', '', convert_arabic(text))
 
     yolo_digits = detect_national_id(id_cropped)
@@ -215,7 +202,7 @@ def extract_national_id(id_cropped):
     print(f"  YOLO : {yolo_digits} ({len(yolo_digits)}/14)")
 
     if all_digits == yolo_digits and len(all_digits) == 14:
-        print("Perfect Match! → Using YOLO")
+        print(" Match → Using YOLO")
         return yolo_digits
 
     if len(all_digits) == 14 and len(yolo_digits) == 14:
@@ -235,28 +222,23 @@ def extract_national_id(id_cropped):
         print("YOLO incomplete → OCR")
         return all_digits
 
-    print(f"Failed | OCR={len(all_digits)} | YOLO={len(yolo_digits)}")
+    print(f"Failed , OCR={len(all_digits)} | YOLO={len(yolo_digits)}")
     
     return None
 
 
-
 '''full pipeline from image to national ID number'''
 def full_pipeline(input_img):
-
     img_array = np.frombuffer(input_img, np.uint8)
     image     = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
-    image_cropped = crop_card(image, card_model)
+    image_cropped = crop_card(image)
 
     corrected_orientation = correct_orientation(image_cropped)
 
     corrected_skew = correct_skew(corrected_orientation)
 
-    corrected_skew_np = np.array(corrected_skew)
-    corrected_skew_bgr = cv2.cvtColor(corrected_skew_np, cv2.COLOR_RGB2BGR)
-
-    id_cropped = crop_id_box(corrected_skew_bgr, id_model)
+    id_cropped = crop_id_box(corrected_skew)
     nid = extract_national_id(id_cropped)
 
     return corrected_skew, id_cropped, nid
