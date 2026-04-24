@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from utils import full_pipeline  
+from utils import extract_nid_from_image  
 from info import decode_egyptian_id
 
 st.set_page_config(
@@ -130,7 +130,7 @@ if uploaded_file:
             time.sleep(0.2)
 
             progress_bar.progress(40)
-            corrected_skew, id_cropped, nid = full_pipeline(img_content)
+            corrected_skew, id_cropped, nid = extract_nid_from_image(img_content)
 
             progress_bar.progress(80)
             info_data = decode_egyptian_id(nid)
