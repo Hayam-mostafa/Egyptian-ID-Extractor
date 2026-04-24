@@ -16,8 +16,8 @@ Computer Vision system that detects, corrects, and extracts structured informati
 - **Skew Correction**  
   Uses Hough Line Transform to straighten tilted images and improve OCR accuracy.
 
-- **Hybrid OCR Engine**  
-  Combines YOLOv8 digit detection with EasyOCR for robust extraction of the 14-digit National ID.
+- **Dual-Stage Validation**  
+  A sophisticated hybrid system that prioritizes YOLOv8 for high-speed digit localization, backed by EasyOCR as a fallback layer to ensure maximum character recognition reliability.
 
 - **ID Decoding System**  
   Extracts structured information from the ID:
