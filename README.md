@@ -43,12 +43,13 @@ Computer Vision system that detects, corrects, and extracts structured informati
 ---
 ## ✨Test App:-
 
+<p align="center"><img src="test.jpg" width="600"/></p>
 
 ---
 ## 📸Try It Yourself!
 You can test the system with your own ID images (Front side) through our live demo:
 
-👉 Live Demo: [اضغطي هنا وحطي لينك الـ HuggingFace بتاعك]
+👉 Live Demo: https://egyptian-id-extractor-hayoma.streamlit.app/
 
 ---
 
