@@ -1,104 +1,135 @@
+# Egyptian National ID Extractor
 
-# 🪪 Egyptian National ID Extractor
+An AI-powered system for extracting structured information from Egyptian National ID cards using object detection, OCR, and image processing techniques.
 
-Computer Vision system that detects, corrects, and extracts structured information from Egyptian National ID cards using YOLOv8, OCR, and image processing techniques.
+The system detects the ID card, corrects its orientation and skew, extracts the 14-digit National ID number, validates it, and decodes the user's birth date, governorate, and gender.
 
 ---
 
-## 🌟 Key Features
+## Demo
 
-- **Automatic Card Detection**  
-  Detects and crops the ID card from complex backgrounds using a YOLOv8 object detection model.
+Try the application online:
 
-- **Smart Orientation Correction**  
-  Automatically identifies and fixes card rotation (0°, 90°, 180°, 270°) using confidence-based evaluation.
+**Streamlit App:**  
+[Egyptian-Id-Extractor](https://egyptian-id-extractor-hayoma.streamlit.app/)
 
-- **Skew Correction**  
-  Uses Hough Line Transform to straighten tilted images and improve OCR accuracy.
+---
 
-- **Dual-Stage Validation**  
-  A sophisticated hybrid system that prioritizes YOLOv8 for high-speed digit localization, backed by EasyOCR as a fallback layer to ensure maximum character recognition reliability.
+## Features
 
-- **ID Decoding System**  
-  Extracts structured information from the ID:
+- Card detection using YOLO
+- Automatic orientation correction
+- Skew correction using OpenCV
+- National ID region detection
+- OCR using a CRNN model
+- Egyptian National ID validation
+- Decode:
   - Birth Date
   - Governorate
   - Gender
-
-- **Modern Web Interface**  
-  Interactive and responsive Streamlit dashboard with a clean dark UI.
+- Interactive Streamlit interface
 
 ---
-## 📁 Project Structure
+
+## Pipeline
 
 ```text
-├── app.py              # Streamlit web app
-├── utils.py            # All Program Extract_NID_From_Image
-├── info.py             # ID decoding and validation logic
-├── Models/             # YOLOv8 trained weights
-├── requirements.txt    # Python dependencies
-├── packages.txt        # System dependencies (for Deployment)
-└── README.md
+Input Image
+      │
+      ▼
+Card Detection (YOLO)
+      │
+      ▼
+Orientation Correction
+      │
+      ▼
+Skew Correction
+      │
+      ▼
+National ID Detection
+      │
+      ▼
+CRNN OCR
+      │
+      ▼
+Validation & Decoding
+      │
+      ▼
+Display Results
 ```
----
-## 📸Try It Yourself!
-You can test the system with your own ID images (Front side) through our live demo:
-
-👉 Live Demo: https://egyptian-id-extractor-hayoma.streamlit.app/
 
 ---
 
-## 🧠 System Architecture
+## Tech Stack
 
-The pipeline follows a multi-stage processing workflow:
-
-1. **Card Detection** → YOLOv8 model detects ID card region  
-2. **Preprocessing** → CLAHE, grayscale conversion, and adaptive thresholding  
-3. **Orientation Correction** → Selects best rotation using model confidence  
-4. **Skew Correction** → Hough Line Transform-based alignment  
-5. **Digit Recognition** → YOLOv8 digit model + EasyOCR fallback  
-6. **Validation & Decoding** → Ensures valid 14-digit structure and extracts metadata  
-
----
-## 📊 Evaluation
-
-The system was evaluated on a manually collected dataset of 500 Egyptian National ID card images with diverse variations in lighting, rotation, blur, and background conditions.
-The model achieved an overall **accuracy of 98%**, demonstrating strong robustness and reliability in real-world scenarios.
+- Python
+- PyTorch
+- Ultralytics YOLO
+- OpenCV
+- Streamlit
+- NumPy
 
 ---
 
-## 💻 Installation & Setup
+## Project Structure
 
-### 1️⃣ Clone the Repository
-
-```bash
-git clone https://github.com/Hayam-mostafa/Egyptian-NID-Extractor.git
-cd Egyptian-NID-Extractor
-````
+```text
+NID-Extractor/
+│
+├── app.py
+├── utils.py
+├── info.py
+├── requirements.txt
+├── README.md
+└── Models/
+    ├── card_detector.pt
+    ├── nid_detector.pt
+    └── best_crnn.pth
+```
 
 ---
 
-### 2️⃣ Install Dependencies
+## Installation
 
-Make sure Python 3.9+ is installed.
+Install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Run the Application
+Create a `Models` folder and place the model files inside it.
+
+### Model Files
+
+The trained model weights are not included in this repository because of GitHub file size limits.
+
+Download them from:
+
+- **CRNN Model:** [Drive](https://drive.google.com/file/d/1qpxysgUfDOstEo1ZSpp5EGyTZaTMMUBB/view?usp=sharing)
+- **YOLO Models:** (or another Drive link if needed)
+
+After downloading, place them inside:
+
+```text
+Models/
+├── card_detector.pt
+├── nid_detector.pt
+└── best_crnn.pth
+```
+
+---
+
+## Run
 
 ```bash
 streamlit run app.py
 ```
+
 ---
 
+## Performance
 
-## ⚙️ Technologies Used
+- High-accuracy card detection
+- Reliable National ID localization
+- CRNN OCR Accuracy: **≈98%** on the evaluation dataset
 
-* Python 
-* YOLOv8 (Ultralytics) 
-* OpenCV 
-* EasyOCR 
-* NumPy
-* Streamlit 
