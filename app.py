@@ -1,7 +1,7 @@
 import streamlit as st
 import time
-from utils import extract_nid_from_image  
-from info import decode_egyptian_id
+from utils import extract_national_id  
+from info import parse_egyptian_id
 
 st.set_page_config(
     page_title="NID Extractor",
@@ -130,10 +130,10 @@ if uploaded_file:
             time.sleep(0.2)
 
             progress_bar.progress(40)
-            corrected_skew, id_cropped, nid = extract_nid_from_image(img_content)
+            _, _, nid = extract_national_id(img_content)
 
             progress_bar.progress(80)
-            info_data = decode_egyptian_id(nid)
+            info_data = parse_egyptian_id(nid)
 
             progress_bar.progress(100)
             progress_bar.empty()
@@ -157,9 +157,9 @@ if uploaded_file:
 
                 st.markdown(f"""
                 <div class="result-card">
-                    <div class="info"><span class="value">{info_data['Birth Date']}</span><span class="label">Birth Date</span></div>
-                    <div class="info"><span class="value">{info_data['Governorate']}</span><span class="label">Governorate</span></div>
-                    <div class="info"><span class="value">{info_data['Gender']}</span><span class="label">Gender</span></div>
+                    <div class="info"><span class="value">{info_data['birth_date']}</span><span class="label">Birth Date</span></div>
+                    <div class="info"><span class="value">{info_data['governorate']}</span><span class="label">Governorate</span></div>
+                    <div class="info"><span class="value">{info_data['gender']}</span><span class="label">Gender</span></div>
                 </div>
                 """, unsafe_allow_html=True)
 
