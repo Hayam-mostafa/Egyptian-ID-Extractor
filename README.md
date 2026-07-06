@@ -6,15 +6,6 @@ The system detects the ID card, corrects its orientation and skew, extracts the 
 
 ---
 
-## Demo
-
-Try the application online:
-
-**Streamlit App:**  
-[Egyptian-Id-Extractor](https://egyptian-id-extractor-hayoma.streamlit.app/)
-
----
-
 ## Features
 
 - Card detection using YOLO
